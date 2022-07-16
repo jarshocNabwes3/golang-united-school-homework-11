@@ -1,8 +1,10 @@
 package batch
 
 import (
-	"sync"
+	"context"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type user struct {
@@ -15,24 +17,24 @@ func getOne(id int64) user {
 }
 
 func getBatch(n int64, pool int64) (res []user) {
-	var wg sync.WaitGroup
-	sem := make(chan bool, pool)
+	errG, _ := errgroup.WithContext(context.Background())
+	errG.SetLimit(int(pool))
 	chUsers := make(chan user, n)
 
 	for i := int64(0); i < n; i++ {
-		wg.Add(1)
-		sem <- true
+		k := i
 
-		go func(j int64) {
-			defer func() { <-sem }()
-			defer wg.Done()
+		errG.Go(func() error {
+			func(j int64) {
 
-			item := getOne(j)
-			chUsers <- item
-		}(i)
+				item := getOne(j)
+				chUsers <- item
+			}(k) // i -> k -> j
+			return nil
+		})
 	}
 
-	wg.Wait()
+	errG.Wait()
 	close(chUsers)
 
 	for item := range chUsers {
