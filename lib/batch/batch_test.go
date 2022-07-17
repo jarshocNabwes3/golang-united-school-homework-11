@@ -1,6 +1,7 @@
 package batch
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -27,11 +28,16 @@ func Test_getButch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			start := time.Now()
-			wantTime := start.Add(time.Duration(100_000_000 * tt.args.n / tt.args.pool))
-			actualRes := getBatch(tt.args.n, tt.args.pool)
-			end := time.Now()
+			const ms = int64(time.Millisecond)
+			abs := func(inp int64) int64 {
+				return int64(math.Abs(float64(inp)))
+			}
 
-			assert.WithinDuration(t, wantTime, end, time.Millisecond*200)
+			wanted := ms * tt.args.n / tt.args.pool * 100
+			actualRes := getBatch(tt.args.n, tt.args.pool)
+			actual := int64(time.Since(start))
+
+			assert.LessOrEqual(t, abs(wanted-actual), ms*200)
 			assert.ElementsMatch(t, tt.wantRes, actualRes)
 		})
 	}
