@@ -27,16 +27,21 @@ func Test_getButch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			start := time.Now()
+
+			// Arrange
+			n, pool := tt.args.n, tt.args.pool
 			const ms = int64(time.Millisecond)
 			abs := func(inp int64) int64 {
 				return int64(math.Abs(float64(inp)))
 			}
+			start := time.Now()
 
-			wanted := ms * tt.args.n / tt.args.pool * 100
+			// Act
+			wanted := ms * n / pool * 100
 			actualRes := getBatch(tt.args.n, tt.args.pool)
 			actual := int64(time.Since(start))
 
+			// Assert
 			assert.LessOrEqual(t, abs(wanted-actual), ms*200)
 			assert.ElementsMatch(t, tt.wantRes, actualRes)
 		})
